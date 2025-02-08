@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Pack Calculator - Surg or Star</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px; 
+    }
+    .container { 
+      margin-bottom: 20px; 
+    }
+    table { 
+      border-collapse: collapse; 
+      margin-top: 20px; 
+      width: 100%; 
+      max-width: 800px; 
+    }
+    th, td { 
+      border: 1px solid #ccc; 
+      padding: 8px 12px; 
+      text-align: center; 
+    }
+    th { 
+      background-color: #f4f4f4; 
+    }
+    input[type="number"] { 
+      width: 80px; 
+    }
+  </style>
+</head>
+<body>
+  <h1>Pack Calculator</h1>
+  
+  <div class="container">
+    <strong>Select Mode:</strong>
+    <input type="radio" id="modeSurg" name="mode" value="surg" checked onclick="toggleMode()">
+    <label for="modeSurg">Surg</label>
+    <input type="radio" id="modeStar" name="mode" value="star" onclick="toggleMode()">
+    <label for="modeStar">Star</label>
+  </div>
+  
+  <div id="surgContainer">
+    <h2>Surg Pack Calculator</h2>
+    <div class="container">
+      <label for="surgPacks">Number of Surg Packs:</label>
+      <input type="number" id="surgPacks" value="0" min="0">
+    </div>
+    <div class="container">
+      <label for="surgCost">Amount Paid (WL):</label>
+      <input type="number" id="surgCost" value="0" min="0">
+    </div>
+    <button onclick="calculateSurg()">Calculate</button>
+    
+    <h3>Surg Pack Tools</h3>
+    <div id="surgTable"></div>
+    
+    <h3>Totals</h3>
+    <div id="surgTotals"></div>
+  </div>
+  
+  <div id="starContainer" style="display: none;">
+    <h2>Star Pack Calculator</h2>
+    <div class="container">
+      <label for="starPacks">Number of Star Packs:</label>
+      <input type="number" id="starPacks" value="0" min="0">
+    </div>
+    <div class="container">
+      <label for="starCost">Amount Paid (WL):</label>
+      <input type="number" id="starCost" value="0" min="0">
+    </div>
+    <button onclick="calculateStar()">Calculate</button>
+    
+    <h3>Star Pack Tools</h3>
+    <div id="starTable"></div>
+    
+    <h3>Totals</h3>
+    <div id="starTotals"></div>
+  </div>
+  
+  <script>
+
+    var surgTools = [
+      { name: "Anesthetic",      defaultPriceNum: 14, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Antibiotics",     defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Antiseptic",      defaultPriceNum: 15, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Clamp",           defaultPriceNum: 15, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Defribillator",   defaultPriceNum: 15, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Lab Kit",         defaultPriceNum: 15, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Pins",            defaultPriceNum: 15, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Scalpel",         defaultPriceNum: 13, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Splint",          defaultPriceNum: 15, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Sponge",          defaultPriceNum: 14, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Transfusion",     defaultPriceNum: 15, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Ultrasound",      defaultPriceNum: 15, defaultPriceDenom: 1, qtyPerPack: 20 },
+      { name: "Surg E",          defaultPriceNum: 3,  defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "Stitch Tool",     defaultPriceNum: 200, defaultPriceDenom: 130, qtyPerPack: 20 }
+    ];
+    
+    var starTools = [
+      { name: "Al Brain",           defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "Cyborg Diplomat",    defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "Galacticbolt",       defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "Gigablaster",        defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "Growton Torpedo",    defaultPriceNum: 11, defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "HyperShields",       defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "Quadriscanner",      defaultPriceNum: 11, defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "Space Meds",         defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "Star Supplies",      defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "Stellar Documents",  defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
+      { name: "Tactical Drone",     defaultPriceNum: 200, defaultPriceDenom: 135, qtyPerPack: 5 },
+      { name: "Teleporter Charge",  defaultPriceNum: 200, defaultPriceDenom: 90,  qtyPerPack: 5 },
+      { name: "StarFuel",           defaultPriceNum: 200, defaultPriceDenom: 1,   qtyPerPack: 5 }
+    ];
+ 
+    function generateSurgTable() {
+      var surgHTML = "<table><tr>" +
+                       "<th>Tool</th>" +
+                       "<th>Quantity</th>" +
+                       "<th>Price (Items)</th>" +
+                       "<th>Price (WL)</th>" +
+                       "<th>Total WL Value</th>" +
+                     "</tr>";
+      for (var i = 0; i < surgTools.length; i++) {
+        var tool = surgTools[i];
+        surgHTML += "<tr>" +
+                      "<td>" + tool.name + "</td>" +
+                      "<td id='surgQty_" + i + "'>0</td>" +
+                      "<td><input type='number' id='surgPriceNum_" + i + "' value='" + tool.defaultPriceNum + "'></td>" +
+                      "<td><input type='number' id='surgPriceDenom_" + i + "' value='" + tool.defaultPriceDenom + "'></td>" +
+                      "<td id='surgValue_" + i + "'>0</td>" +
+                    "</tr>";
+      }
+      surgHTML += "</table>";
+      document.getElementById("surgTable").innerHTML = surgHTML;
+    }
+   
+    function generateStarTable() {
+      var starHTML = "<table><tr>" +
+                       "<th>Tool</th>" +
+                       "<th>Quantity</th>" +
+                       "<th>Price (Items)</th>" +
+                       "<th>Price (WL)</th>" +
+                       "<th>Total WL Value</th>" +
+                     "</tr>";
+      for (var i = 0; i < starTools.length; i++) {
+        var tool = starTools[i];
+        starHTML += "<tr>" +
+                      "<td>" + tool.name + "</td>" +
+                      "<td id='starQty_" + i + "'>0</td>" +
+                      "<td><input type='number' id='starPriceNum_" + i + "' value='" + tool.defaultPriceNum + "'></td>" +
+                      "<td><input type='number' id='starPriceDenom_" + i + "' value='" + tool.defaultPriceDenom + "'></td>" +
+                      "<td id='starValue_" + i + "'>0</td>" +
+                    "</tr>";
+      }
+      starHTML += "</table>";
+      document.getElementById("starTable").innerHTML = starHTML;
+    }
+    
+    function calculateSurg() {
+      var surgPacks = parseFloat(document.getElementById('surgPacks').value) || 0;
+      var cost = parseFloat(document.getElementById('surgCost').value) || 0;
+      var surgTotal = 0;
+      
+      for (var i = 0; i < surgTools.length; i++) {
+        var tool = surgTools[i];
+        var qty = surgPacks * tool.qtyPerPack;
+        document.getElementById("surgQty_" + i).innerText = qty;
+        
+        var priceNum = parseFloat(document.getElementById("surgPriceNum_" + i).value);
+        var priceDenom = parseFloat(document.getElementById("surgPriceDenom_" + i).value);
+        var wlValue = (priceNum ? (qty / priceNum) * priceDenom : 0);
+        
+        document.getElementById("surgValue_" + i).innerText = wlValue.toFixed(2) + " WL";
+        surgTotal += wlValue;
+      }
+      
+      var cleanProfit = surgTotal - cost;
+      var totalsHTML = "<p><strong>Grand Total WL Value: " + surgTotal.toFixed(2) + " WL</strong></p>" +
+                       "<p><strong>Amount Paid: " + cost.toFixed(2) + " WL</strong></p>" +
+                       "<p><strong>Clean Profit: " + cleanProfit.toFixed(2) + " WL</strong></p>";
+      document.getElementById("surgTotals").innerHTML = totalsHTML;
+    }
+    
+    function calculateStar() {
+      var starPacks = parseFloat(document.getElementById('starPacks').value) || 0;
+      var cost = parseFloat(document.getElementById('starCost').value) || 0;
+      var starTotal = 0;
+      
+      for (var i = 0; i < starTools.length; i++) {
+        var tool = starTools[i];
+        var qty = starPacks * tool.qtyPerPack;
+        document.getElementById("starQty_" + i).innerText = qty;
+        
+        var priceNum = parseFloat(document.getElementById("starPriceNum_" + i).value);
+        var priceDenom = parseFloat(document.getElementById("starPriceDenom_" + i).value);
+        var wlValue = (priceNum ? (qty / priceNum) * priceDenom : 0);
+        
+        document.getElementById("starValue_" + i).innerText = wlValue.toFixed(2) + " WL";
+        starTotal += wlValue;
+      }
+      
+      var cleanProfit = starTotal - cost;
+      var totalsHTML = "<p><strong>Grand Total WL Value: " + starTotal.toFixed(2) + " WL</strong></p>" +
+                       "<p><strong>Amount Paid: " + cost.toFixed(2) + " WL</strong></p>" +
+                       "<p><strong>Clean Profit: " + cleanProfit.toFixed(2) + " WL</strong></p>";
+      document.getElementById("starTotals").innerHTML = totalsHTML;
+    }
+    
+    function toggleMode() {
+      var mode = document.querySelector('input[name="mode"]:checked').value;
+      if (mode === "surg") {
+        document.getElementById("surgContainer").style.display = "block";
+        document.getElementById("starContainer").style.display = "none";
+      } else {
+        document.getElementById("surgContainer").style.display = "none";
+        document.getElementById("starContainer").style.display = "block";
+      }
+    }
+
+    window.onload = function() {
+      generateSurgTable();
+      generateStarTable();
+      toggleMode();
+    };
+  </script>
+</body>
+</html>
