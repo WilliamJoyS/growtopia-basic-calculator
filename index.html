@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Pack Calculator - Surg or Star</title>
+  <title>Pack Calculator with History and Auto Totals</title>
   <style>
     body { 
       font-family: Arial, sans-serif; 
@@ -28,6 +28,12 @@
     input[type="number"] { 
       width: 80px; 
     }
+    button { 
+      margin-right: 10px; 
+    }
+    #historySection { 
+      margin-top: 40px; 
+    }
   </style>
 </head>
 <body>
@@ -52,6 +58,7 @@
       <input type="number" id="surgCost" value="0" min="0">
     </div>
     <button onclick="calculateSurg()">Calculate</button>
+    <button onclick="saveCalculation()">Save Calculation</button>
     
     <h3>Surg Pack Tools</h3>
     <div id="surgTable"></div>
@@ -60,6 +67,7 @@
     <div id="surgTotals"></div>
   </div>
   
+  <!-- Star Container -->
   <div id="starContainer" style="display: none;">
     <h2>Star Pack Calculator</h2>
     <div class="container">
@@ -71,6 +79,7 @@
       <input type="number" id="starCost" value="0" min="0">
     </div>
     <button onclick="calculateStar()">Calculate</button>
+    <button onclick="saveCalculation()">Save Calculation</button>
     
     <h3>Star Pack Tools</h3>
     <div id="starTable"></div>
@@ -79,8 +88,16 @@
     <div id="starTotals"></div>
   </div>
   
+  <div id="historySection">
+    <h2>Calculation History</h2>
+    <button onclick="clearHistory()">Clear History</button>
+    <div id="historyContainer"></div>
+  </div>
+  
   <script>
-
+    var lastSurgResult = null;
+    var lastStarResult = null;
+    
     var surgTools = [
       { name: "Anesthetic",      defaultPriceNum: 14, defaultPriceDenom: 1, qtyPerPack: 20 },
       { name: "Antibiotics",     defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 20 },
@@ -97,7 +114,7 @@
       { name: "Surg E",          defaultPriceNum: 3,  defaultPriceDenom: 1, qtyPerPack: 5 },
       { name: "Stitch Tool",     defaultPriceNum: 200, defaultPriceDenom: 130, qtyPerPack: 20 }
     ];
-    
+
     var starTools = [
       { name: "Al Brain",           defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
       { name: "Cyborg Diplomat",    defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
@@ -113,7 +130,7 @@
       { name: "Teleporter Charge",  defaultPriceNum: 200, defaultPriceDenom: 90,  qtyPerPack: 5 },
       { name: "StarFuel",           defaultPriceNum: 200, defaultPriceDenom: 1,   qtyPerPack: 5 }
     ];
- 
+
     function generateSurgTable() {
       var surgHTML = "<table><tr>" +
                        "<th>Tool</th>" +
@@ -135,7 +152,7 @@
       surgHTML += "</table>";
       document.getElementById("surgTable").innerHTML = surgHTML;
     }
-   
+    
     function generateStarTable() {
       var starHTML = "<table><tr>" +
                        "<th>Tool</th>" +
@@ -158,6 +175,7 @@
       document.getElementById("starTable").innerHTML = starHTML;
     }
     
+    // --- Calculation Functions ---
     function calculateSurg() {
       var surgPacks = parseFloat(document.getElementById('surgPacks').value) || 0;
       var cost = parseFloat(document.getElementById('surgCost').value) || 0;
@@ -171,7 +189,6 @@
         var priceNum = parseFloat(document.getElementById("surgPriceNum_" + i).value);
         var priceDenom = parseFloat(document.getElementById("surgPriceDenom_" + i).value);
         var wlValue = (priceNum ? (qty / priceNum) * priceDenom : 0);
-        
         document.getElementById("surgValue_" + i).innerText = wlValue.toFixed(2) + " WL";
         surgTotal += wlValue;
       }
@@ -181,6 +198,15 @@
                        "<p><strong>Amount Paid: " + cost.toFixed(2) + " WL</strong></p>" +
                        "<p><strong>Clean Profit: " + cleanProfit.toFixed(2) + " WL</strong></p>";
       document.getElementById("surgTotals").innerHTML = totalsHTML;
+ 
+      lastSurgResult = {
+        mode: "Surg",
+        packs: surgPacks,
+        cost: cost,
+        total: surgTotal,
+        profit: cleanProfit,
+        timestamp: new Date().toLocaleString()
+      };
     }
     
     function calculateStar() {
@@ -196,7 +222,6 @@
         var priceNum = parseFloat(document.getElementById("starPriceNum_" + i).value);
         var priceDenom = parseFloat(document.getElementById("starPriceDenom_" + i).value);
         var wlValue = (priceNum ? (qty / priceNum) * priceDenom : 0);
-        
         document.getElementById("starValue_" + i).innerText = wlValue.toFixed(2) + " WL";
         starTotal += wlValue;
       }
@@ -206,6 +231,89 @@
                        "<p><strong>Amount Paid: " + cost.toFixed(2) + " WL</strong></p>" +
                        "<p><strong>Clean Profit: " + cleanProfit.toFixed(2) + " WL</strong></p>";
       document.getElementById("starTotals").innerHTML = totalsHTML;
+      
+      lastStarResult = {
+        mode: "Star",
+        packs: starPacks,
+        cost: cost,
+        total: starTotal,
+        profit: cleanProfit,
+        timestamp: new Date().toLocaleString()
+      };
+    }
+    
+    function saveCalculation() {
+      var mode = document.querySelector('input[name="mode"]:checked').value;
+      var result;
+      var key;
+      
+      if (mode === "surg") {
+        if (!lastSurgResult) { alert("Please calculate first!"); return; }
+        result = lastSurgResult;
+        key = "calcHistorySurg";
+      } else {
+        if (!lastStarResult) { alert("Please calculate first!"); return; }
+        result = lastStarResult;
+        key = "calcHistoryStar";
+      }
+      
+      var history = localStorage.getItem(key);
+      history = history ? JSON.parse(history) : [];
+      
+      history.push(result);
+      localStorage.setItem(key, JSON.stringify(history));
+      
+      updateHistory();
+    }
+    
+    function updateHistory() {
+      var mode = document.querySelector('input[name="mode"]:checked').value;
+      var key = (mode === "surg") ? "calcHistorySurg" : "calcHistoryStar";
+      var history = localStorage.getItem(key);
+      history = history ? JSON.parse(history) : [];
+      
+      var html = "";
+      if (history.length === 0) {
+        html = "<p>No history saved yet.</p>";
+      } else {
+        var totalCost = 0, totalWL = 0, totalProfit = 0;
+        
+        html = "<table><tr>" +
+                 "<th>Date/Time</th>" +
+                 "<th>Packs</th>" +
+                 "<th>Amount Paid (WL)</th>" +
+                 "<th>Total WL Value</th>" +
+                 "<th>Clean Profit</th>" +
+               "</tr>";
+        history.forEach(function(entry) {
+          totalCost += entry.cost;
+          totalWL += entry.total;
+          totalProfit += entry.profit;
+          
+          html += "<tr>" +
+                    "<td>" + entry.timestamp + "</td>" +
+                    "<td>" + entry.packs + "</td>" +
+                    "<td>" + entry.cost.toFixed(2) + "</td>" +
+                    "<td>" + entry.total.toFixed(2) + "</td>" +
+                    "<td>" + entry.profit.toFixed(2) + "</td>" +
+                  "</tr>";
+        });
+        html += "<tr>" +
+                  "<td colspan='2'><strong>Totals</strong></td>" +
+                  "<td><strong>" + totalCost.toFixed(2) + "</strong></td>" +
+                  "<td><strong>" + totalWL.toFixed(2) + "</strong></td>" +
+                  "<td><strong>" + totalProfit.toFixed(2) + "</strong></td>" +
+                "</tr>";
+        html += "</table>";
+      }
+      document.getElementById("historyContainer").innerHTML = html;
+    }
+    
+    function clearHistory() {
+      var mode = document.querySelector('input[name="mode"]:checked').value;
+      var key = (mode === "surg") ? "calcHistorySurg" : "calcHistoryStar";
+      localStorage.removeItem(key);
+      updateHistory();
     }
     
     function toggleMode() {
@@ -217,8 +325,9 @@
         document.getElementById("surgContainer").style.display = "none";
         document.getElementById("starContainer").style.display = "block";
       }
+      updateHistory();
     }
-
+    
     window.onload = function() {
       generateSurgTable();
       generateStarTable();
