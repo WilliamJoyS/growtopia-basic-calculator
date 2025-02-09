@@ -67,7 +67,6 @@
     <div id="surgTotals"></div>
   </div>
   
-  <!-- Star Container -->
   <div id="starContainer" style="display: none;">
     <h2>Star Pack Calculator</h2>
     <div class="container">
@@ -114,7 +113,8 @@
       { name: "Surg E",          defaultPriceNum: 3,  defaultPriceDenom: 1, qtyPerPack: 5 },
       { name: "Stitch Tool",     defaultPriceNum: 200, defaultPriceDenom: 130, qtyPerPack: 20 }
     ];
-
+    
+    // Define Star Tools
     var starTools = [
       { name: "Al Brain",           defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
       { name: "Cyborg Diplomat",    defaultPriceNum: 12, defaultPriceDenom: 1, qtyPerPack: 5 },
@@ -174,8 +174,7 @@
       starHTML += "</table>";
       document.getElementById("starTable").innerHTML = starHTML;
     }
-    
-    // --- Calculation Functions ---
+ 
     function calculateSurg() {
       var surgPacks = parseFloat(document.getElementById('surgPacks').value) || 0;
       var cost = parseFloat(document.getElementById('surgCost').value) || 0;
@@ -198,7 +197,7 @@
                        "<p><strong>Amount Paid: " + cost.toFixed(2) + " WL</strong></p>" +
                        "<p><strong>Clean Profit: " + cleanProfit.toFixed(2) + " WL</strong></p>";
       document.getElementById("surgTotals").innerHTML = totalsHTML;
- 
+
       lastSurgResult = {
         mode: "Surg",
         packs: surgPacks,
@@ -231,7 +230,7 @@
                        "<p><strong>Amount Paid: " + cost.toFixed(2) + " WL</strong></p>" +
                        "<p><strong>Clean Profit: " + cleanProfit.toFixed(2) + " WL</strong></p>";
       document.getElementById("starTotals").innerHTML = totalsHTML;
-      
+
       lastStarResult = {
         mode: "Star",
         packs: starPacks,
@@ -242,6 +241,7 @@
       };
     }
     
+    // --- History Functions ---
     function saveCalculation() {
       var mode = document.querySelector('input[name="mode"]:checked').value;
       var result;
@@ -259,7 +259,7 @@
       
       var history = localStorage.getItem(key);
       history = history ? JSON.parse(history) : [];
-      
+
       history.push(result);
       localStorage.setItem(key, JSON.stringify(history));
       
@@ -310,6 +310,12 @@
     }
     
     function clearHistory() {
+      var pwd = prompt("Enter password to clear history:");
+      if (pwd !== "JOY") {
+        alert("Wrong password! History not cleared.");
+        return;
+      }
+      
       var mode = document.querySelector('input[name="mode"]:checked').value;
       var key = (mode === "surg") ? "calcHistorySurg" : "calcHistoryStar";
       localStorage.removeItem(key);
@@ -327,7 +333,7 @@
       }
       updateHistory();
     }
-    
+
     window.onload = function() {
       generateSurgTable();
       generateStarTable();
